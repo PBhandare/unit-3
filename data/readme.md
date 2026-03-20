@@ -1,1 +1,1 @@
-Add data sources to the data folder
+The data currently obtained is for Q1 2025 labor certification applications for H1B visas for the states of Alaska, Wyoming, South Dakota, West Virginia and New Mexico since they seem to have no fortune 1000 companies, which may have legal departments that would have a streamlined workflow for processing visa applications for their employees, so its curious what kind of employers and other employee characteristics can be identified in these areas.
