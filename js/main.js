@@ -73,7 +73,13 @@ function setMap(){
 function setChart(csvData, colorScale){
     //chart frame dimensions
     var chartWidth = window.innerWidth * 0.425,
-        chartHeight = 460;
+        chartHeight = 460,
+        leftPadding = 25,
+        rightPadding = 2,
+        topBottomPadding = 5,
+        chartInnerWidth = chartWidth - leftPadding - rightPadding,
+        chartInnerHeight = chartHeight - topBottomPadding * 2,
+        translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
 
     //create a second svg element to hold the bar chart
     var chart = d3.select("body")
@@ -84,7 +90,7 @@ function setChart(csvData, colorScale){
 
     //create a scale to size bars proportionally to frame
     var yScale = d3.scaleLinear()
-        .range([0, chartHeight])
+        .range([chartInnerHeight, 0])
         .domain([0, 105]);
 
     //Example 2.4 line 8...set bars for each province
@@ -93,20 +99,20 @@ function setChart(csvData, colorScale){
         .enter()
         .append("rect")
         .sort(function(a, b){
-            return a[expressed]-b[expressed]
+            return b[expressed]-a[expressed]
         })
         .attr("class", function(d){
             return "bars " + d.adm1_code;
         })
-        .attr("width", chartWidth / csvData.length - 1)
+        .attr("width", chartInnerWidth / csvData.length - 1)
         .attr("x", function(d, i){
-            return i * (chartWidth / csvData.length);
+            return i * (chartInnerWidth / csvData.length) + leftPadding;
         })
         .attr("height", function(d){
-            return yScale(parseFloat(d[expressed]));
+            return chartInnerHeight - yScale(parseFloat(d[expressed]));
         })
         .attr("y", function(d){
-            return chartHeight - yScale(parseFloat(d[expressed]));
+            return yScale(parseFloat(d[expressed])) + topBottomPadding;
         })
         //Example 2.5 line 23...end of bars block
         .style("fill", function(d){
@@ -119,18 +125,18 @@ function setChart(csvData, colorScale){
         .enter()
         .append("text")
         .sort(function(a, b){
-            return a[expressed]-b[expressed]
+            return b[expressed]-a[expressed]
         })
         .attr("class", function(d){
             return "numbers " + d.adm1_code;
         })
         .attr("text-anchor", "middle")
         .attr("x", function(d, i){
-            var fraction = chartWidth / csvData.length;
-            return i * fraction + (fraction - 1) / 2;
+            var fraction = chartInnerWidth / csvData.length;
+            return i * fraction + leftPadding + (fraction - 1) / 2;
         })
         .attr("y", function(d){
-            return chartHeight - yScale(parseFloat(d[expressed])) + 15;
+            return yScale(parseFloat(d[expressed])) + topBottomPadding + 15;
         })
         .text(function(d){
             return d[expressed];
@@ -142,6 +148,16 @@ function setChart(csvData, colorScale){
         .attr("y", 40)
         .attr("class", "chartTitle")
         .text("Number of Variable " + expressed[3] + " in each region");
+
+    //create vertical axis generator
+    var yAxis = d3.axisLeft()
+        .scale(yScale);
+
+    //place axis
+    var axis = chart.append("g")
+        .attr("class", "axis")
+        .attr("transform", translate)
+        .call(yAxis);
 };
 
 //Example 1.4 line 11...function to create color scale generator
