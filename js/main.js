@@ -131,7 +131,8 @@ function setChart(csvData, colorScale){
         })
         .on("mouseout", function(event, d){
             dehighlight(d);
-        });
+        })
+        .on("mousemove", moveLabel);
 
     var desc = bars.append("desc")
         .text('{"stroke": "none", "stroke-width": "0px"}');
@@ -279,7 +280,8 @@ function setEnumerationUnits(franceRegions, map, path, colorScale){
         })
         .on("mouseout", function(event, d){
             dehighlight(d.properties);
-        });
+        })
+        .on("mousemove", moveLabel);
 
     var desc = regions.append("desc")
         .text('{"stroke": "#000", "stroke-width": "0.5px"}');
@@ -399,17 +401,19 @@ function changeAttribute(attribute, csvData) {
 
 //function to highlight enumeration units and bars
 function highlight(d){
-    var key = d.adm1_code || d.properties.adm1_code;
+    var key = d.adm1_code;
 
     //change stroke
     d3.selectAll(".bar." + key + ", .regions." + key)
         .style("stroke", "blue")
         .style("stroke-width", "2");
+
+    setLabel(d);
 };
 
 //function to reset the element style on mouseout
 function dehighlight(d){
-    var key = d.adm1_code || d.properties.adm1_code;
+    var key = d.adm1_code;
 
     var selected = d3.selectAll(".bar." + key + ", .regions." + key)
         .style("stroke", function(){
@@ -428,6 +432,51 @@ function dehighlight(d){
 
         return styleObject[styleName];
     };
+
+    d3.select(".infolabel")
+        .remove();
+};
+
+//function to create dynamic label
+function setLabel(props){
+    //label content
+    var labelAttribute = "<h1>" + props[expressed] +
+        "</h1><b>" + expressed + "</b>";
+
+    //create info label div
+    var infolabel = d3.select("body")
+        .append("div")
+        .attr("class", "infolabel")
+        .attr("id", props.adm1_code + "_label")
+        .html(labelAttribute);
+
+    var regionName = infolabel.append("div")
+        .attr("class", "labelname")
+        .html(props.name);
+};
+
+//Example 2.8 line 1...function to move info label with mouse
+function moveLabel(){
+    //get width of label
+    var labelWidth = d3.select(".infolabel")
+        .node()
+        .getBoundingClientRect()
+        .width;
+
+    //use coordinates of mousemove event to set label coordinates
+    var x1 = event.clientX + 10,
+        y1 = event.clientY - 75,
+        x2 = event.clientX - labelWidth - 10,
+        y2 = event.clientY + 25;
+
+    //horizontal label coordinate, testing for overflow
+    var x = event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1; 
+    //vertical label coordinate, testing for overflow
+    var y = event.clientY < 75 ? y2 : y1; 
+
+    d3.select(".infolabel")
+        .style("left", x + "px")
+        .style("top", y + "px");
 };
 
 })();
