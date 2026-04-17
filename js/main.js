@@ -73,7 +73,7 @@ function setMap(){
 function setChart(csvData, colorScale){
     //chart frame dimensions
     var chartWidth = window.innerWidth * 0.425,
-        chartHeight = 460,
+        chartHeight = 473,
         leftPadding = 25,
         rightPadding = 2,
         topBottomPadding = 5,
@@ -88,13 +88,20 @@ function setChart(csvData, colorScale){
         .attr("height", chartHeight)
         .attr("class", "chart");
 
-    //create a scale to size bars proportionally to frame
-    var yScale = d3.scaleLinear()
-        .range([chartInnerHeight, 0])
-        .domain([0, 105]);
+    //create a rectangle for chart background fill
+    var chartBackground = chart.append("rect")
+        .attr("class", "chartBackground")
+        .attr("width", chartInnerWidth)
+        .attr("height", chartInnerHeight)
+        .attr("transform", translate);
 
-    //Example 2.4 line 8...set bars for each province
-    var bars = chart.selectAll(".bars")
+    //create a scale to size bars proportionally to frame and for axis
+    var yScale = d3.scaleLinear()
+        .range([463, 0])
+        .domain([0, 100]);
+
+    //set bars for each province
+    var bars = chart.selectAll(".bar")
         .data(csvData)
         .enter()
         .append("rect")
@@ -102,24 +109,23 @@ function setChart(csvData, colorScale){
             return b[expressed]-a[expressed]
         })
         .attr("class", function(d){
-            return "bars " + d.adm1_code;
+            return "bar " + d.adm1_code;
         })
         .attr("width", chartInnerWidth / csvData.length - 1)
         .attr("x", function(d, i){
             return i * (chartInnerWidth / csvData.length) + leftPadding;
         })
-        .attr("height", function(d){
-            return chartInnerHeight - yScale(parseFloat(d[expressed]));
+        .attr("height", function(d, i){
+            return 463 - yScale(parseFloat(d[expressed]));
         })
-        .attr("y", function(d){
+        .attr("y", function(d, i){
             return yScale(parseFloat(d[expressed])) + topBottomPadding;
         })
-        //Example 2.5 line 23...end of bars block
         .style("fill", function(d){
             return colorScale(d[expressed]);
         });
 
-    //annotate bars with attribute value text
+        //annotate bars with attribute value text
     var numbers = chart.selectAll(".numbers")
         .data(csvData)
         .enter()
@@ -133,18 +139,18 @@ function setChart(csvData, colorScale){
         .attr("text-anchor", "middle")
         .attr("x", function(d, i){
             var fraction = chartInnerWidth / csvData.length;
-            return i * fraction + leftPadding + (fraction - 1) / 2;
+            return leftPadding + i * fraction + (fraction - 1) / 2;
         })
         .attr("y", function(d){
-            return yScale(parseFloat(d[expressed])) + topBottomPadding + 15;
+            return topBottomPadding + yScale(parseFloat(d[expressed])) + 15;
         })
         .text(function(d){
             return d[expressed];
         });
 
-    //below Example 2.8...create a text element for the chart title
+    //create a text element for the chart title
     var chartTitle = chart.append("text")
-        .attr("x", 20)
+        .attr("x", 40)
         .attr("y", 40)
         .attr("class", "chartTitle")
         .text("Number of Variable " + expressed[3] + " in each region");
@@ -158,7 +164,15 @@ function setChart(csvData, colorScale){
         .attr("class", "axis")
         .attr("transform", translate)
         .call(yAxis);
+
+    //create frame for chart border
+    var chartFrame = chart.append("rect")
+        .attr("class", "chartFrame")
+        .attr("width", chartInnerWidth)
+        .attr("height", chartInnerHeight)
+        .attr("transform", translate);
 };
+
 
 //Example 1.4 line 11...function to create color scale generator
 function makeColorScale(data){
