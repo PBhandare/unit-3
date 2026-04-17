@@ -4,6 +4,21 @@
 var attrArray = ["varA", "varB", "varC", "varD", "varE"];
 var expressed = attrArray[0];
 
+//chart frame dimensions
+var chartWidth = window.innerWidth * 0.425,
+    chartHeight = 473,
+    leftPadding = 25,
+    rightPadding = 2,
+    topBottomPadding = 5,
+    chartInnerWidth = chartWidth - leftPadding - rightPadding,
+    chartInnerHeight = chartHeight - topBottomPadding * 2,
+    translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
+
+//create a scale to size bars proportionally to frame and for axis
+var yScale = d3.scaleLinear()
+    .range([chartInnerHeight, 0])
+    .domain([0, 100]);
+
 //begin script when window loads
 window.onload = setMap();
 
@@ -66,21 +81,13 @@ function setMap(){
 
         //add coordinated visualization to the map
         setChart(csvData, colorScale);
+
+        createDropdown(csvData);
     };
 };
 
 //function to create coordinated bar chart
 function setChart(csvData, colorScale){
-    //chart frame dimensions
-    var chartWidth = window.innerWidth * 0.425,
-        chartHeight = 473,
-        leftPadding = 25,
-        rightPadding = 2,
-        topBottomPadding = 5,
-        chartInnerWidth = chartWidth - leftPadding - rightPadding,
-        chartInnerHeight = chartHeight - topBottomPadding * 2,
-        translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
-
     //create a second svg element to hold the bar chart
     var chart = d3.select("body")
         .append("svg")
@@ -94,11 +101,6 @@ function setChart(csvData, colorScale){
         .attr("width", chartInnerWidth)
         .attr("height", chartInnerHeight)
         .attr("transform", translate);
-
-    //create a scale to size bars proportionally to frame and for axis
-    var yScale = d3.scaleLinear()
-        .range([463, 0])
-        .domain([0, 100]);
 
     //set bars for each province
     var bars = chart.selectAll(".bar")
@@ -116,16 +118,25 @@ function setChart(csvData, colorScale){
             return i * (chartInnerWidth / csvData.length) + leftPadding;
         })
         .attr("height", function(d, i){
-            return 463 - yScale(parseFloat(d[expressed]));
+            return chartInnerHeight - yScale(parseFloat(d[expressed]));
         })
         .attr("y", function(d, i){
             return yScale(parseFloat(d[expressed])) + topBottomPadding;
         })
         .style("fill", function(d){
             return colorScale(d[expressed]);
+        })
+        .on("mouseover", function(event, d){
+            highlight(d);
+        })
+        .on("mouseout", function(event, d){
+            dehighlight(d);
         });
 
-        //annotate bars with attribute value text
+    var desc = bars.append("desc")
+        .text('{"stroke": "none", "stroke-width": "0px"}');
+
+    //annotate bars with attribute value text
     var numbers = chart.selectAll(".numbers")
         .data(csvData)
         .enter()
@@ -153,7 +164,7 @@ function setChart(csvData, colorScale){
         .attr("x", 40)
         .attr("y", 40)
         .attr("class", "chartTitle")
-        .text("Number of Variable " + expressed[3] + " in each region");
+        .text("Number of Variable " + expressed + " in each region");
 
     //create vertical axis generator
     var yAxis = d3.axisLeft()
@@ -193,6 +204,7 @@ function makeColorScale(data){
         d3.min(data, function(d) { return parseFloat(d[expressed]); }),
         d3.max(data, function(d) { return parseFloat(d[expressed]); })
     ];
+
     //assign two-value array as scale domain
     colorScale.domain(minmax);
 
@@ -246,7 +258,7 @@ function joinData(franceRegions, csvData){
 
 function setEnumerationUnits(franceRegions, map, path, colorScale){
 
-    map.selectAll(".regions")
+    var regions = map.selectAll(".regions")
         .data(franceRegions)
         .enter()
         .append("path")
@@ -261,7 +273,161 @@ function setEnumerationUnits(franceRegions, map, path, colorScale){
             } else {
                 return "#ccc";
             }
+        })
+        .on("mouseover", function(event, d){
+            highlight(d.properties);
+        })
+        .on("mouseout", function(event, d){
+            dehighlight(d.properties);
         });
+
+    var desc = regions.append("desc")
+        .text('{"stroke": "#000", "stroke-width": "0.5px"}');
+};
+
+//function to create a dropdown menu for attribute selection
+function createDropdown(csvData){
+    //add select element
+    var dropdown = d3.select("body")
+        .append("select")
+        .attr("class", "dropdown")
+        .on("change", function(){
+            changeAttribute(this.value, csvData)
+        });
+
+    //add initial option
+    var titleOption = dropdown.append("option")
+        .attr("class", "titleOption")
+        .attr("disabled", "true")
+        .text("Select Attribute");
+
+    //add attribute name options
+    var attrOptions = dropdown.selectAll("attrOptions")
+        .data(attrArray)
+        .enter()
+        .append("option")
+        .attr("value", function(d){ return d })
+        .text(function(d){ return d });
+};
+
+//dropdown change event handler
+function changeAttribute(attribute, csvData) {
+    //change the expressed attribute
+    expressed = attribute;
+
+    //recreate the color scale
+    var colorScale = makeColorScale(csvData);
+
+    //recolor enumeration units
+    var regions = d3.selectAll(".regions")
+        .transition()
+        .duration(1000)
+        .style("fill", function (d) {
+            var value = d.properties[expressed];
+            if (value) {
+                return colorScale(d.properties[expressed]);
+            } else {
+                return "#ccc";
+            }
+    });
+
+    var maxValue = d3.max(csvData, function(d){
+        return parseFloat(d[expressed]);
+    });
+
+    var roundedMax = Math.ceil(maxValue / 9) * 10;
+
+    yScale.domain([0, roundedMax]);
+
+    d3.select(".axis")
+        .call(d3.axisLeft(yScale));
+
+    //Sort, resize, and recolor bars
+    var bars = d3.selectAll(".bar")
+        //Sort bars
+        .sort(function(a, b){
+            return b[expressed] - a[expressed];
+        })
+        .transition()
+        .delay(function(d, i){
+            return i * 20
+        })
+        .duration(500)
+        .attr("x", function(d, i){
+            return i * (chartInnerWidth / csvData.length) + leftPadding;
+        })
+        //resize bars
+        .attr("height", function(d, i){
+            return chartInnerHeight - yScale(parseFloat(d[expressed]));
+        })
+        .attr("y", function(d, i){
+            return yScale(parseFloat(d[expressed])) + topBottomPadding;
+        })
+        //recolor bars
+        .style("fill", function(d){            
+            var value = d[expressed];            
+            if(value) {                
+                return colorScale(value);            
+            } else {                
+                return "#ccc";            
+            }    
+    });
+
+    d3.select(".chartTitle")
+        .text("Number of Variable " + expressed + " in each region");
+
+    var numbers = d3.selectAll(".numbers")
+        .sort(function(a, b){
+            return b[expressed] - a[expressed];
+        })
+        .transition()
+        .delay(function(d, i){
+            return i * 20
+        })
+        .duration(500)
+        .attr("x", function(d, i){
+            var fraction = chartInnerWidth / csvData.length;
+            return leftPadding + i * fraction + (fraction - 1) / 2;
+        })
+        .attr("y", function(d){
+            return topBottomPadding + yScale(parseFloat(d[expressed])) + 15;
+        })
+        .text(function(d){
+            return d[expressed];
+        });
+}
+
+//function to highlight enumeration units and bars
+function highlight(d){
+    var key = d.adm1_code || d.properties.adm1_code;
+
+    //change stroke
+    d3.selectAll(".bar." + key + ", .regions." + key)
+        .style("stroke", "blue")
+        .style("stroke-width", "2");
+};
+
+//function to reset the element style on mouseout
+function dehighlight(d){
+    var key = d.adm1_code || d.properties.adm1_code;
+
+    var selected = d3.selectAll(".bar." + key + ", .regions." + key)
+        .style("stroke", function(){
+            return getStyle(this, "stroke");
+        })
+        .style("stroke-width", function(){
+            return getStyle(this, "stroke-width");
+        });
+
+    function getStyle(element, styleName){
+        var styleText = d3.select(element)
+            .select("desc")
+            .text();
+
+        var styleObject = JSON.parse(styleText);
+
+        return styleObject[styleName];
+    };
 };
 
 })();
