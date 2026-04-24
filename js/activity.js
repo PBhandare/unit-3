@@ -46,9 +46,9 @@ function setMap(){
 
     //load data
     var promises = [];    
-    promises.push(d3.csv("data/unitsData.csv"));   
-    promises.push(d3.json("data/EuropeCountries.topojson"));   
-    promises.push(d3.json("data/FranceRegions.topojson"));   
+    promises.push(d3.csv("data/activity/unitsData.csv"));   
+    promises.push(d3.json("data/activity/EuropeCountries.topojson"));   
+    promises.push(d3.json("data/activity/FranceRegions.topojson"));   
     Promise.all(promises).then(callback);    
 
     function callback(data){    
