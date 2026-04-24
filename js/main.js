@@ -2,6 +2,8 @@
 
 var chartTitles = {"entropy_norm": 'Standard Occupational Classification Variability'};
 
+var labelUnits = {"entropy_norm": 'variance'};
+
 //chart frame dimensions
 var chartWidth = window.innerWidth * 0.4,
     chartHeight = window.innerHeight * 0.6,
@@ -22,7 +24,6 @@ window.onload = setMap;
 
 //set up choropleth map
 function setMap(){
-    
     var container = d3.select("#map-container").node();
     var width = container.clientWidth;
     var height = container.clientHeight * 0.95;
@@ -87,7 +88,6 @@ function setMap(){
 
 //GRATICULE FUNCTION
 function setGraticule(map, path){
-
     var graticule = d3.geoGraticule()
         .step([5, 5]);
 
@@ -107,7 +107,6 @@ function setGraticule(map, path){
 };
 
 function joinData(regions, data, attrArray){
-
     for (var i = 0; i < data.length; i++){
         var dataState = data[i];
         var dataKey = dataState.WORKSITE_STATE;
@@ -154,13 +153,13 @@ function makeColorScale(data, measure){
 };
 
 function setEnumerationUnits(regions, map, path, colorScale, measure){
-
     var regions = map.selectAll(".regions")
         .data(regions)
         .enter()
         .append("path")
-        .attr("class", function(d){
-            return "regions " + d.properties.STUSPS;
+        .attr("class", "regions")
+        .attr("data-state", function(d){
+            return d.properties.STUSPS;
         })
         .attr("d", path)
         .style("fill", function(d){
@@ -170,11 +169,24 @@ function setEnumerationUnits(regions, map, path, colorScale, measure){
             } else {
                 return "#ccc";
             }
-        });
+        })
+        .on("mouseover", function(event, d){
+            highlight(d.properties, measure);
+        })
+        .on("mouseout", function(event, d){
+            dehighlight(d.properties);
+        })
+        .on("mousemove", moveLabel);
+
+        var desc = regions.append("desc")
+            .text('{"stroke": "#000", "stroke-width": "0.5px"}');
 };
 
 //function to create coordinated bar chart
 function setChart(csvData, colorScale, measure){
+    var startIndex = 0;
+    var visibleCount = 20;
+
     //create a second svg element to hold the bar chart
     var chart = d3.select(".chart-block[data-attr='" + measure + "']")
         .append("svg")
@@ -204,8 +216,9 @@ function setChart(csvData, colorScale, measure){
         .sort(function(a, b){
             return b[measure]-a[measure]
         })
-        .attr("class", function(d){
-            return "bar " + d.WORKSITE_STATE;
+        .attr("class", "bar")
+        .attr("data-state", function(d){
+            return d.WORKSITE_STATE;
         })
         .attr("width", chartInnerWidth / csvData.length - 1)
         .attr("x", function(d, i){
@@ -219,7 +232,17 @@ function setChart(csvData, colorScale, measure){
         })
         .style("fill", function(d){
             return colorScale(d[measure]);
-        });
+        })
+        .on("mouseover", function(event, d){
+            highlight(d, measure);
+        })
+        .on("mouseout", function(event, d){
+            dehighlight(d);
+        })
+        .on("mousemove", moveLabel);
+
+    var desc = bars.append("desc")
+        .text('{"stroke": "none", "stroke-width": "0px"}');
 
     var barWidth = chartInnerWidth / csvData.length;
 
@@ -274,6 +297,86 @@ function setChart(csvData, colorScale, measure){
         .attr("width", chartInnerWidth)
         .attr("height", chartInnerHeight)
         .attr("transform", translate);
+};
+
+//function to highlight enumeration units and bars
+function highlight(d, measure){
+    var key = d.WORKSITE_STATE || d.STUSPS;
+
+    //change stroke
+    d3.selectAll("[data-state='" + key + "']")
+        .style("stroke", "blue")
+        .style("stroke-width", "2");
+
+    setLabel(d, measure);
+};
+
+//function to reset the element style on mouseout
+function dehighlight(d){
+    var key = d.WORKSITE_STATE || d.STUSPS;
+
+    var selected = d3.selectAll("[data-state='" + key + "']")
+        .style("stroke", function(){
+            return getStyle(this, "stroke");
+        })
+        .style("stroke-width", function(){
+            return getStyle(this, "stroke-width");
+        });
+
+    function getStyle(element, styleName){
+        var styleText = d3.select(element)
+            .select("desc")
+            .text();
+
+        var styleObject = JSON.parse(styleText);
+
+        return styleObject[styleName];
+    };
+
+    d3.select(".infolabel")
+        .remove();
+};
+
+//function to create dynamic label
+function setLabel(props, measure){
+    //label content
+    var labelAttribute = "<h1>" + parseFloat(props[measure]).toFixed(2) +
+        "</h1><b>" + labelUnits[measure] + "</b>";
+
+    //create info label div
+    var infolabel = d3.select(".container")
+        .append("div")
+        .attr("class", "infolabel")
+        .attr("id", props.WORKSITE_STATE || props.STUSPS + "_label")
+        .html(labelAttribute);
+
+    var regionName = infolabel.append("div")
+        .attr("class", "labelname")
+        .html(props.WORKSITE_STATE || props.STUSPS);
+};
+
+//Example 2.8 line 1...function to move info label with mouse
+function moveLabel(){
+    //get width of label
+    var labelWidth = d3.select(".infolabel")
+        .node()
+        .getBoundingClientRect()
+        .width;
+
+    //use coordinates of mousemove event to set label coordinates
+    var x1 = event.clientX + 10,
+        y1 = event.clientY - 75,
+        x2 = event.clientX - labelWidth - 10,
+        y2 = event.clientY + 25;
+
+    //horizontal label coordinate, testing for overflow
+    var x = event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1; 
+    //vertical label coordinate, testing for overflow
+    var y = event.clientY < 75 ? y2 : y1; 
+
+    d3.select(".infolabel")
+        .style("left", x + "px")
+        .style("top", y + "px");
 };
 
 })();
