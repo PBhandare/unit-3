@@ -11,7 +11,7 @@ html, body {
 }
 
 #map-container {
-    width: 50%;
+    width: 55%;
 }
 
 #panel {
@@ -73,7 +73,7 @@ html, body {
 
 .chartTitle {
     font-family: sans-serif;
-    font-size: 1.5em;
+    font-size: 1em;
     font-weight: bold;
 }
 
@@ -134,4 +134,27 @@ option {
     padding: 0;
     display: inline-block;
     line-height: 1em;
+}
+
+/* Width and Height */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+/* Track (background) */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+/* Thumb (draggable handle) */
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+/* Thumb on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
