@@ -81,7 +81,7 @@ var chartWidth = window.innerWidth * 0.4,
     chartInnerHeight = chartHeight - topBottomPadding * 2,
     translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
 
-// ── Shared state ──────────────────────────────────────────────────────────────
+//  Shared state 
 var currentSection = "entropy_norm";   // active section key
 var currentSOC     = SOCcodes[0];      // active SOC code for proportions view
 
@@ -119,7 +119,7 @@ var gEntropyColorScale, gPropColorScales = {};
 //begin script when window loads
 window.onload = setMap;
 
-// ── MAP SETUP ─────────────────────────────────────────────────────────────────
+//  MAP SETUP 
 function setMap(){
     var container = d3.select("#map-container").node();
     var width  = container.clientWidth  * 0.9;
@@ -201,7 +201,7 @@ function setMap(){
     };
 };
 
-// ── PROPORTION SECTION SETUP ──────────────────────────────────────────────────
+//  PROPORTION SECTION SETUP 
 function buildProportionSection(propData){
 
     // Insert dropdown into the proportions section prose area
@@ -243,7 +243,7 @@ function buildProportionSection(propData){
     setProportionChart(propData, gPropColorScales[currentSOC], currentSOC);
 }
 
-// ── MAP UPDATE (called by section observer + dropdown) ────────────────────────
+//  MAP UPDATE (called by section observer + dropdown) 
 function updateMap(measure){
     if (!gMap || !gStatesFeatures) return;
     currentSection = measure;
@@ -283,7 +283,7 @@ function rewireRegionEvents(measure){
         .on("mouseout",  function(event, d){ dehighlight(d.properties); });
 }
 
-// ── PROPORTION CHART UPDATE (redraw bars for new SOC code) ────────────────────
+//  PROPORTION CHART UPDATE (redraw bars for new SOC code) 
 function updateProportionChart(socCode){
     var chartBlock = d3.select(".chart-block[data-attr='proportions']");
 
@@ -293,7 +293,7 @@ function updateProportionChart(socCode){
     setProportionChart(gPropData, gPropColorScales[socCode], socCode);
 }
 
-// ── GRATICULE ─────────────────────────────────────────────────────────────────
+//  GRATICULE 
 function setGraticule(map, path){
     var graticule = d3.geoGraticule().step([5, 5]);
 
@@ -310,7 +310,7 @@ function setGraticule(map, path){
         .attr("d", path);
 };
 
-// ── DATA JOIN ─────────────────────────────────────────────────────────────────
+//  DATA JOIN 
 function joinData(regions, data, attrArray){
     for (var i = 0; i < data.length; i++){
         var dataState = data[i];
@@ -331,7 +331,7 @@ function joinData(regions, data, attrArray){
     return regions;
 };
 
-// ── COLOR SCALE ───────────────────────────────────────────────────────────────
+//  COLOR SCALE 
 function makeColorScale(data, measure){
     var colorClasses = [
         "#D4B9DA",
@@ -352,7 +352,7 @@ function makeColorScale(data, measure){
     return colorScale;
 };
 
-// ── ENUMERATION UNITS ─────────────────────────────────────────────────────────
+//  ENUMERATION UNITS 
 function setEnumerationUnits(regions, map, path, colorScale, measure){
     var regionPaths = map.selectAll(".regions")
         .data(regions)
@@ -377,7 +377,7 @@ function setEnumerationUnits(regions, map, path, colorScale, measure){
         .text('{"stroke": "#000", "stroke-width": "0.5px"}');
 };
 
-// ── ENTROPY BAR CHART (original, untouched) ───────────────────────────────────
+//  ENTROPY BAR CHART (original, untouched) 
 function setChart(csvData, colorScale, measure){
     var chart = d3.select(".chart-block[data-attr='" + measure + "']")
         .append("svg")
@@ -451,7 +451,7 @@ function setChart(csvData, colorScale, measure){
         .attr("transform", translate);
 };
 
-// ── PROPORTION BAR CHART ──────────────────────────────────────────────────────
+//  PROPORTION BAR CHART 
 function setProportionChart(csvData, colorScale, measure){
 
     var chart = d3.select(".chart-block[data-attr='proportions']")
@@ -533,7 +533,7 @@ function setProportionChart(csvData, colorScale, measure){
         .attr("transform", translate);
 };
 
-// ── LONG-FORMAT SECTIONS (full / trunc) ──────────────────────────────────────
+//  LONG-FORMAT SECTIONS (full / trunc) 
 
 // Filter long CSV to rows matching a SOC code, keyed by state
 function filterLongBySoc(data, socCode){
@@ -797,7 +797,7 @@ function setLongChart(sectionId, byState, col){
         .attr("transform", translate);
 }
 
-// ── HIGHLIGHT / DEHIGHLIGHT / LABEL ───────────────────────────────────────────
+//  HIGHLIGHT / DEHIGHLIGHT / LABEL 
 function highlight(d, measure){
     var key = d.WORKSITE_STATE || d.STUSPS;
     d3.selectAll("[data-state='" + key + "']")
@@ -848,7 +848,7 @@ function moveLabel(){
     d3.select(".infolabel").style("left", x + "px").style("top", y + "px");
 };
 
-// ── SECTION OBSERVER ──────────────────────────────────────────────────────────
+//  SECTION OBSERVER 
 function setupSectionObserver(){
     const panel = document.querySelector("#panel");
     const sections = document.querySelectorAll("#slides .section");
