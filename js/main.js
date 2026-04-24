@@ -36,10 +36,9 @@ function setMap(){
         setGraticule(map, path);
 
         //translate topojson
-        var states = topojson.feature(america, america.objects.cb_2018_us_state_500k)
-            //franceRegions = topojson.feature(france, france.objects.FranceRegions).features;
+        var states = topojson.feature(america, america.objects.cb_2018_us_state_500k);
 
-        //add Europe countries
+        //add American states
         map.append("path")
             .datum(states)
             .attr("class", "states")
